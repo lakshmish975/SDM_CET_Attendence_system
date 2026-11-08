@@ -22,7 +22,11 @@ import {
   Edit,
   Trash2,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Menu,
+  X,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 
 import { defaultFourGroupRosters, defaultGroupLinks } from './data/defaultStudents.js';
@@ -134,6 +138,10 @@ export default function App() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+
+  // Mobile Navigation & View States
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileViewMode, setMobileViewMode] = useState('cards'); // 'cards' | 'table'
 
   // Toast Notification State
   const [toast, setToast] = useState({ visible: false, message: '' });
@@ -474,111 +482,261 @@ export default function App() {
       {/* Navigation Header */}
       <header className="bg-slate-950 text-white shadow-xl sticky top-0 z-40 border-b border-slate-800/80 backdrop-blur-md bg-opacity-95">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div className="flex items-center justify-between">
             
             {/* Title & Brand */}
-            <div className="flex items-center space-x-3">
-              <div className={`p-2.5 rounded-2xl shadow-lg text-white transition-all duration-300 ${theme.logoBg}`}>
-                <GraduationCap className="w-7 h-7" />
+            <div className="flex items-center space-x-2.5 sm:space-x-3">
+              <div className={`p-2 sm:p-2.5 rounded-2xl shadow-lg text-white transition-all duration-300 ${theme.logoBg}`}>
+                <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
-                  Apex Academy
-                  <span className="text-[10px] sm:text-xs bg-slate-900 text-emerald-400 border border-slate-700 px-2.5 py-0.5 rounded-full uppercase tracking-wider font-extrabold shadow-inner">
-                    MERN Edition
+                <h1 className="text-base sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5 sm:gap-2">
+                  <span>Apex Academy</span>
+                  <span className="text-[9px] sm:text-xs bg-slate-900 text-emerald-400 border border-slate-700 px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold shadow-inner">
+                    MERN
                   </span>
                 </h1>
-                <p className="text-xs text-slate-400 font-medium">Daily Attendance, Marks & WhatsApp Broadcast Suite</p>
+                <p className="hidden sm:block text-xs text-slate-400 font-medium">Daily Attendance, Marks & WhatsApp Broadcast Suite</p>
+                <p className="sm:hidden text-[11px] text-emerald-400 font-bold">{theme.title}</p>
               </div>
             </div>
 
-            {/* 4 Separate Category Switches with Icons & Colors */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 self-start lg:self-auto">
-              {/* 1. I PUC CET */}
-              <button
-                type="button"
-                onClick={() => setCurrentCategory('IPUC_CET')}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  currentCategory === 'IPUC_CET'
-                    ? categoryThemes.IPUC_CET.activeTabBg
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>I PUC CET</span>
-              </button>
+            {/* Desktop Navbar: 4 Category Switches & Settings (Visible only on lg and above) */}
+            <div className="hidden lg:flex items-center space-x-4">
+              {/* 4 Separate Category Switches with Icons & Colors */}
+              <div className="grid grid-cols-4 gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setCurrentCategory('IPUC_CET')}
+                  className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                    currentCategory === 'IPUC_CET'
+                      ? categoryThemes.IPUC_CET.activeTabBg
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>I PUC CET</span>
+                </button>
 
-              {/* 2. I PUC NEET */}
-              <button
-                type="button"
-                onClick={() => setCurrentCategory('IPUC_NEET')}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  currentCategory === 'IPUC_NEET'
-                    ? categoryThemes.IPUC_NEET.activeTabBg
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Stethoscope className="w-4 h-4" />
-                <span>I PUC NEET</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentCategory('IPUC_NEET')}
+                  className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                    currentCategory === 'IPUC_NEET'
+                      ? categoryThemes.IPUC_NEET.activeTabBg
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Stethoscope className="w-4 h-4" />
+                  <span>I PUC NEET</span>
+                </button>
 
-              {/* 3. II PUC CET */}
-              <button
-                type="button"
-                onClick={() => setCurrentCategory('IIPUC_CET')}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  currentCategory === 'IIPUC_CET'
-                    ? categoryThemes.IIPUC_CET.activeTabBg
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Award className="w-4 h-4" />
-                <span>II PUC CET</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentCategory('IIPUC_CET')}
+                  className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                    currentCategory === 'IIPUC_CET'
+                      ? categoryThemes.IIPUC_CET.activeTabBg
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Award className="w-4 h-4" />
+                  <span>II PUC CET</span>
+                </button>
 
-              {/* 4. II PUC NEET */}
-              <button
-                type="button"
-                onClick={() => setCurrentCategory('IIPUC_NEET')}
-                className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                  currentCategory === 'IIPUC_NEET'
-                    ? categoryThemes.IIPUC_NEET.activeTabBg
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Activity className="w-4 h-4" />
-                <span>II PUC NEET</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setCurrentCategory('IIPUC_NEET')}
+                  className={`flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                    currentCategory === 'IIPUC_NEET'
+                      ? categoryThemes.IIPUC_NEET.activeTabBg
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                  }`}
+                >
+                  <Activity className="w-4 h-4" />
+                  <span>II PUC NEET</span>
+                </button>
+              </div>
+
+              {/* Config & DB Buttons */}
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDbModalOpen(true)}
+                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shadow-sm ${
+                    dbStatus.isConnected
+                      ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
+                      : 'bg-slate-800 text-amber-400 border-amber-900/60 hover:bg-slate-700'
+                  }`}
+                  title="MongoDB Database Connection Status & Settings"
+                >
+                  <Database className="w-3.5 h-3.5" />
+                  <span>{dbStatus.isConnected ? 'MongoDB Connected' : 'Database Settings'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsGroupModalOpen(true)}
+                  className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 transition"
+                >
+                  <Settings className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Group Links</span>
+                </button>
+              </div>
             </div>
 
-            {/* Config & DB Buttons */}
-            <div className="flex items-center space-x-2">
+            {/* Mobile View: Hamburger Menu Button (Visible ONLY on mobile/tablet < lg) */}
+            <div className="flex lg:hidden items-center space-x-2">
               <button
                 type="button"
-                onClick={() => setIsDbModalOpen(true)}
-                className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shadow-sm ${
-                  dbStatus.isConnected
-                    ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
-                    : 'bg-slate-800 text-amber-400 border-amber-900/60 hover:bg-slate-700'
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`p-2.5 rounded-2xl border transition flex items-center justify-center ${
+                  mobileMenuOpen
+                    ? 'bg-slate-800 text-white border-slate-600'
+                    : 'bg-slate-900 text-slate-300 hover:text-white border-slate-800'
                 }`}
-                title="MongoDB Database Connection Status & Settings"
+                aria-label="Toggle Navigation Menu"
               >
-                <Database className="w-3.5 h-3.5" />
-                <span>{dbStatus.isConnected ? 'MongoDB Connected' : 'Database Settings'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsGroupModalOpen(true)}
-                className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 transition"
-              >
-                <Settings className="w-3.5 h-3.5 text-slate-400" />
-                <span>Group Links</span>
+                {mobileMenuOpen ? <X className="w-5 h-5 text-emerald-400" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
 
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu Drawer (Visible ONLY when hamburger icon is clicked on mobile) */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden border-t border-slate-800 bg-slate-950/98 px-4 pt-4 pb-6 space-y-4 shadow-2xl animate-in slide-in-from-top-3 duration-200 backdrop-blur-xl">
+            <div>
+              <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                Select Active Student Batch
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentCategory('IPUC_CET');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-bold transition border ${
+                    currentCategory === 'IPUC_CET'
+                      ? 'bg-emerald-600 text-white border-emerald-500 shadow-md'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                  }`}
+                >
+                  <BookOpen className="w-4 h-4 shrink-0" />
+                  <div className="text-left">
+                    <div>I PUC CET</div>
+                    <div className="text-[10px] opacity-75 font-normal">{(studentsData.IPUC_CET || []).length} Students</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentCategory('IPUC_NEET');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-bold transition border ${
+                    currentCategory === 'IPUC_NEET'
+                      ? 'bg-teal-600 text-white border-teal-500 shadow-md'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                  }`}
+                >
+                  <Stethoscope className="w-4 h-4 shrink-0" />
+                  <div className="text-left">
+                    <div>I PUC NEET</div>
+                    <div className="text-[10px] opacity-75 font-normal">{(studentsData.IPUC_NEET || []).length} Students</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentCategory('IIPUC_CET');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-bold transition border ${
+                    currentCategory === 'IIPUC_CET'
+                      ? 'bg-blue-600 text-white border-blue-500 shadow-md'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                  }`}
+                >
+                  <Award className="w-4 h-4 shrink-0" />
+                  <div className="text-left">
+                    <div>II PUC CET</div>
+                    <div className="text-[10px] opacity-75 font-normal">{(studentsData.IIPUC_CET || []).length} Students</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCurrentCategory('IIPUC_NEET');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 p-2.5 rounded-xl text-xs font-bold transition border ${
+                    currentCategory === 'IIPUC_NEET'
+                      ? 'bg-purple-600 text-white border-purple-500 shadow-md'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 hover:bg-slate-800'
+                  }`}
+                >
+                  <Activity className="w-4 h-4 shrink-0" />
+                  <div className="text-left">
+                    <div>II PUC NEET</div>
+                    <div className="text-[10px] opacity-75 font-normal">{(studentsData.IIPUC_NEET || []).length} Students</div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 space-y-2">
+              <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                System Configurations
+              </p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDbModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition ${
+                    dbStatus.isConnected
+                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                      : 'bg-slate-900 text-amber-400 border-slate-800'
+                  }`}
+                >
+                  <span className="flex items-center space-x-2">
+                    <Database className="w-4 h-4 text-emerald-400" />
+                    <span>Database Configuration</span>
+                  </span>
+                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 font-normal">
+                    {dbStatus.isConnected ? 'Connected' : 'In-Memory'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsGroupModalOpen(true);
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-200 border border-slate-800 hover:bg-slate-800 transition"
+                >
+                  <span className="flex items-center space-x-2">
+                    <Settings className="w-4 h-4 text-slate-400" />
+                    <span>WhatsApp Group Links</span>
+                  </span>
+                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-400 font-normal">
+                    4 Batches
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Container */}
@@ -606,34 +764,34 @@ export default function App() {
             </div>
 
             {/* Launchers & Save Sync Button */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
               
               <button
                 type="button"
                 onClick={() => openWhatsAppGroup('ABSENT')}
-                className={`flex items-center justify-center space-x-2 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition border ${theme.btnAbsent}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center space-x-2 text-white px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition border ${theme.btnAbsent}`}
               >
-                <Users className="w-4 h-4" />
-                <span>{theme.title} Absentees Group</span>
+                <Users className="w-4 h-4 shrink-0" />
+                <span className="truncate">{theme.title} Absentees Group</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => openWhatsAppGroup('MARKS')}
-                className={`flex items-center justify-center space-x-2 text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition border ${theme.btnMarks}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center space-x-2 text-white px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-bold shadow-sm transition border ${theme.btnMarks}`}
               >
-                <FileSpreadsheet className="w-4 h-4" />
-                <span>{theme.title} Marks Group</span>
+                <FileSpreadsheet className="w-4 h-4 shrink-0" />
+                <span className="truncate">{theme.title} Marks Group</span>
               </button>
 
               <button
                 type="button"
                 disabled={isSavingDb}
                 onClick={saveSessionToDatabase}
-                className="flex items-center justify-center space-x-2 bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-black shadow-md transition"
+                className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-black shadow-md transition"
                 title="Save today's attendance and test marks to MongoDB"
               >
-                <Save className="w-4 h-4 text-emerald-600" />
+                <Save className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{isSavingDb ? 'Saving...' : 'Save to DB'}</span>
               </button>
 
@@ -849,20 +1007,48 @@ export default function App() {
           
           {/* Table Toolbar */}
           <div className="p-4 bg-slate-50/90 border-b border-slate-200/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <h3 className="text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-2">
-                <Users className="w-5 h-5 text-slate-600" />
-                <span>{theme.title} Student Roster</span>
-              </h3>
-              <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                {filteredStudents.length} Students
-              </span>
+            <div className="flex items-center justify-between lg:justify-start space-x-3 w-full lg:w-auto">
+              <div className="flex items-center space-x-2.5">
+                <h3 className="text-sm sm:text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-slate-600" />
+                  <span>{theme.title} Student Roster</span>
+                </h3>
+                <span className="bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                  {filteredStudents.length}
+                </span>
+              </div>
+
+              {/* View switcher for Mobile: Cards vs Table */}
+              <div className="md:hidden flex items-center bg-slate-200/80 p-0.5 rounded-xl ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('cards')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 ${
+                    mobileViewMode === 'cards' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                  }`}
+                  title="Card View (Mobile Optimized)"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Cards</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileViewMode('table')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1 ${
+                    mobileViewMode === 'table' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+                  }`}
+                  title="Table View (Full Grid)"
+                >
+                  <List className="w-3.5 h-3.5" />
+                  <span className="text-[11px]">Table</span>
+                </button>
+              </div>
             </div>
 
             {/* Controls */}
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full lg:w-auto">
               {/* Search */}
-              <div className="relative min-w-[220px]">
+              <div className="relative w-full sm:min-w-[220px]">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input
                   type="text"
@@ -873,38 +1059,172 @@ export default function App() {
                 />
               </div>
 
-              {/* Add Student */}
-              <button
-                type="button"
-                onClick={handleOpenAddStudent}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center space-x-1.5 transition shadow-sm"
-              >
-                <UserPlus className="w-4 h-4 text-emerald-400" />
-                <span>Add Student</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* Add Student */}
+                <button
+                  type="button"
+                  onClick={handleOpenAddStudent}
+                  className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center justify-center space-x-1.5 transition shadow-sm"
+                >
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
+                  <span>Add Student</span>
+                </button>
 
-              {/* Bulk Attendance Toggles */}
-              <div className="flex items-center space-x-1 border-l border-slate-300 pl-2">
-                <button
-                  type="button"
-                  onClick={() => markAll(true)}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl transition"
-                >
-                  All Present
-                </button>
-                <button
-                  type="button"
-                  onClick={() => markAll(false)}
-                  className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl transition"
-                >
-                  All Absent
-                </button>
+                {/* Bulk Attendance Toggles */}
+                <div className="flex items-center space-x-1 border-l border-slate-300 pl-2">
+                  <button
+                    type="button"
+                    onClick={() => markAll(true)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl transition"
+                  >
+                    All Present
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => markAll(false)}
+                    className="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold px-2.5 py-2 rounded-xl transition"
+                  >
+                    All Absent
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Table Container */}
-          <div className="overflow-x-auto custom-scrollbar flex-grow">
+          {/* Mobile Cards View (Visible on small screens when mobileViewMode === 'cards') */}
+          {mobileViewMode === 'cards' && (
+            <div className="md:hidden p-3.5 space-y-3 bg-slate-50/60 flex-grow">
+              {filteredStudents.length === 0 ? (
+                <div className="p-10 text-center text-slate-400 text-xs bg-white rounded-2xl border border-slate-200">
+                  No matching student records found.
+                </div>
+              ) : (
+                filteredStudents.map((student, index) => {
+                  const roll = student.rollNo || student.roll;
+                  const max = student.maxScore || globalMaxScore || 100;
+                  const sc = student.score !== undefined ? student.score : 0;
+                  const pct = max > 0 ? ((sc / max) * 100).toFixed(1) : 0;
+
+                  let pctBadge = "bg-slate-100 text-slate-700 border-slate-200";
+                  if (pct >= 75) pctBadge = "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold";
+                  else if (pct >= 40) pctBadge = "bg-amber-50 text-amber-700 border-amber-200 font-bold";
+                  else if (pct > 0) pctBadge = "bg-rose-50 text-rose-700 border-rose-200 font-bold";
+
+                  return (
+                    <div key={student._id || student.id || roll} className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-sm space-y-3">
+                      {/* Top Info */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+                            <span className="text-[11px] font-mono font-bold text-slate-400">#{index + 1}</span>
+                            <span className="text-xs font-mono font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">{roll}</span>
+                            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${
+                              student.stream === 'NEET' ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
+                            }`}>
+                              {student.stream}
+                            </span>
+                            <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold uppercase">
+                              {student.type || student.hostel || 'LOCAL'}
+                            </span>
+                          </div>
+                          <h4 className="font-bold text-slate-900 text-sm mt-1">{student.name}</h4>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">+91 {student.phone}</p>
+                        </div>
+
+                        <div className="flex items-center space-x-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditStudent(student)}
+                            className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition"
+                            title="Edit Student"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteStudent(student)}
+                            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                            title="Delete Student"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Attendance Toggle & Score Inputs */}
+                      <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-100">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Attendance</label>
+                          <button
+                            type="button"
+                            onClick={() => toggleAttendance(roll)}
+                            className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 shadow-sm transition ${
+                              student.present
+                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 border border-emerald-300'
+                                : 'bg-rose-100 text-rose-800 hover:bg-rose-200 border border-rose-300'
+                            }`}
+                          >
+                            {student.present ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                            <span>{student.present ? 'Present' : 'Absent'}</span>
+                          </button>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase">Score</label>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded border ${pctBadge}`}>{pct}%</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <input
+                              type="number"
+                              min="0"
+                              max={max}
+                              value={sc}
+                              onChange={(e) => updateScore(roll, e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-center text-xs font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none"
+                            />
+                            <span className="text-slate-400 text-xs">/</span>
+                            <span className="text-xs font-medium text-slate-500">{max}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Subject & WhatsApp Alert Footer */}
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-500 font-medium">
+                          {subject} <span className="text-slate-400">•</span> {faculty}
+                        </span>
+
+                        <div className="flex items-center space-x-1.5">
+                          <button
+                            type="button"
+                            onClick={() => sendSingleWhatsApp(student)}
+                            className="flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-200 transition shadow-sm"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span>WhatsApp</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => sendSingleSMS(student)}
+                            className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl border border-blue-200 transition"
+                            title="SMS Alert"
+                          >
+                            <Smartphone className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* Table Container (Visible on md+ or when mobileViewMode === 'table') */}
+          <div className={`${mobileViewMode === 'cards' ? 'hidden md:block' : 'block'} overflow-x-auto custom-scrollbar flex-grow`}>
             <table className="w-full text-left text-xs sm:text-sm">
               <thead className="bg-slate-100/90 text-slate-600 font-black uppercase tracking-wider border-b border-slate-200 text-[11px]">
                 <tr>
