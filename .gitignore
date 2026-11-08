@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files and credentials (CRITICAL: NEVER COMMIT PASSWORDS)
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.local
+
+# Build output
+client/dist/
+dist/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
