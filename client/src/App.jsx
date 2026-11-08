@@ -803,18 +803,18 @@ export default function App() {
           </div>
 
           {/* Card 4: Auto WhatsApp & Excel Download */}
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 p-4.5 rounded-3xl border border-slate-800 text-white shadow-md flex flex-col justify-between">
+          <div className="bg-white p-4.5 rounded-3xl border border-slate-200/90 shadow-sm flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                   <span>Automation Suite</span>
                 </h4>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
                   PRO
                 </span>
               </div>
-              <p className="text-xs text-slate-300 mt-1">
+              <p className="text-xs text-slate-500 mt-0.5">
                 Auto-send via WhatsApp Web & Multi-frequency Excel extraction
               </p>
             </div>
@@ -823,7 +823,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsWhatsAppAutoOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-2 px-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm"
                 title="Automated WhatsApp Web Dispatcher"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
@@ -833,7 +833,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setIsExcelModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold py-2 px-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 px-2.5 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm"
                 title="Download Excel: Daily, Weekly, Monthly"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
