@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Student from './models/Student.js';
 import Settings from './models/Settings.js';
-import { getAllInitialStudents, defaultGroupLinks } from './data/studentsData.js';
+import { getAllInitialStudents, defaultGroupLinks, defaultSubjectFaculties } from './data/studentsData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +22,8 @@ export const inMemoryStore = {
   })),
   attendance: [],
   settings: {
-    groupLinks: { ...defaultGroupLinks }
+    groupLinks: { ...defaultGroupLinks },
+    subjectFaculties: { ...defaultSubjectFaculties }
   }
 };
 
@@ -75,13 +76,18 @@ export async function autoSeedIfNeeded() {
     }
 
     // Check Settings
-    const existingSettings = await Settings.findOne({ key: 'app_settings' });
+    let existingSettings = await Settings.findOne({ key: 'app_settings' });
     if (!existingSettings) {
       await Settings.create({
         key: 'app_settings',
-        groupLinks: defaultGroupLinks
+        groupLinks: defaultGroupLinks,
+        subjectFaculties: defaultSubjectFaculties
       });
-      console.log('⚙️ Initialized default group links in database.');
+      console.log('⚙️ Initialized default group links and subject faculties in database.');
+    } else if (!existingSettings.subjectFaculties || existingSettings.subjectFaculties.size === 0) {
+      existingSettings.subjectFaculties = defaultSubjectFaculties;
+      await existingSettings.save();
+      console.log('⚙️ Updated subject faculties in existing settings document.');
     }
   } catch (err) {
     console.error('⚠️ Error during auto-seed:', err.message);

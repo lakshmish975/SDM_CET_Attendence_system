@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import Settings from '../models/Settings.js';
+import Settings, { defaultSubjectFaculties } from '../models/Settings.js';
 import { connectDB, getDbStatus, inMemoryStore, autoSeedIfNeeded } from '../db.js';
 import { defaultGroupLinks } from '../data/studentsData.js';
 
@@ -10,7 +10,7 @@ function isMongoConnected() {
   return mongoose.connection.readyState === 1;
 }
 
-// GET settings (Group links and Database connection status)
+// GET settings (Group links, Database connection status, Subject faculties)
 router.get('/', async (req, res) => {
   try {
     const dbStatus = getDbStatus();
@@ -20,23 +20,100 @@ router.get('/', async (req, res) => {
       if (!settings) {
         settings = await Settings.create({
           key: 'app_settings',
-          groupLinks: defaultGroupLinks
+          groupLinks: defaultGroupLinks,
+          subjectFaculties: defaultSubjectFaculties
         });
       }
+
+      let facultiesObj = defaultSubjectFaculties;
+      if (settings.subjectFaculties) {
+        facultiesObj = settings.subjectFaculties instanceof Map
+          ? Object.fromEntries(settings.subjectFaculties)
+          : (typeof settings.subjectFaculties.toObject === 'function' ? settings.subjectFaculties.toObject() : settings.subjectFaculties);
+      }
+
       return res.json({
         success: true,
         dbStatus,
-        groupLinks: settings.groupLinks || defaultGroupLinks
+        groupLinks: settings.groupLinks || defaultGroupLinks,
+        subjectFaculties: { ...defaultSubjectFaculties, ...facultiesObj }
       });
     } else {
       return res.json({
         success: true,
         dbStatus,
-        groupLinks: inMemoryStore.settings.groupLinks
+        groupLinks: inMemoryStore.settings.groupLinks,
+        subjectFaculties: inMemoryStore.settings.subjectFaculties || defaultSubjectFaculties
       });
     }
   } catch (err) {
     console.error('Error fetching settings:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// PUT update faculty for subject(s)
+router.put('/faculty', async (req, res) => {
+  try {
+    const { subject, faculty, subjectFaculties } = req.body;
+
+    if (subject && faculty !== undefined) {
+      if (isMongoConnected()) {
+        const updateField = `subjectFaculties.${subject}`;
+        const updated = await Settings.findOneAndUpdate(
+          { key: 'app_settings' },
+          { $set: { [updateField]: faculty } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        const facultiesObj = updated.subjectFaculties instanceof Map
+          ? Object.fromEntries(updated.subjectFaculties)
+          : (typeof updated.subjectFaculties?.toObject === 'function' ? updated.subjectFaculties.toObject() : updated.subjectFaculties);
+
+        return res.json({
+          success: true,
+          message: `Faculty for ${subject} updated to ${faculty}`,
+          subjectFaculties: { ...defaultSubjectFaculties, ...facultiesObj }
+        });
+      } else {
+        if (!inMemoryStore.settings.subjectFaculties) {
+          inMemoryStore.settings.subjectFaculties = { ...defaultSubjectFaculties };
+        }
+        inMemoryStore.settings.subjectFaculties[subject] = faculty;
+        return res.json({
+          success: true,
+          message: `Faculty for ${subject} updated in memory store`,
+          subjectFaculties: inMemoryStore.settings.subjectFaculties
+        });
+      }
+    } else if (subjectFaculties && typeof subjectFaculties === 'object') {
+      if (isMongoConnected()) {
+        const updated = await Settings.findOneAndUpdate(
+          { key: 'app_settings' },
+          { $set: { subjectFaculties } },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        const facultiesObj = updated.subjectFaculties instanceof Map
+          ? Object.fromEntries(updated.subjectFaculties)
+          : (typeof updated.subjectFaculties?.toObject === 'function' ? updated.subjectFaculties.toObject() : updated.subjectFaculties);
+
+        return res.json({
+          success: true,
+          message: 'Subject faculties updated',
+          subjectFaculties: { ...defaultSubjectFaculties, ...facultiesObj }
+        });
+      } else {
+        inMemoryStore.settings.subjectFaculties = { ...defaultSubjectFaculties, ...subjectFaculties };
+        return res.json({
+          success: true,
+          message: 'Subject faculties updated in memory store',
+          subjectFaculties: inMemoryStore.settings.subjectFaculties
+        });
+      }
+    } else {
+      return res.status(400).json({ success: false, error: 'subject and faculty (or subjectFaculties) are required' });
+    }
+  } catch (err) {
+    console.error('Error updating faculty:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -113,4 +190,3 @@ router.post('/db-connect', async (req, res) => {
 });
 
 export default router;
-

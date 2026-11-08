@@ -251,3 +251,10 @@ export const defaultGroupLinks = {
   IIPUC_NEET_MARKS: 'https://chat.whatsapp.com/'
 };
 
+export const defaultSubjectFaculties = {
+  Physics: 'Dr. H. V. Rao',
+  Chemistry: 'Prof. Suresh Kumar',
+  Mathematics: 'Dr. Ananya Sharma',
+  Biology: 'Dr. Rajesh Hegde'
+};
+

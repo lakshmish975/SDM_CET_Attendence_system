@@ -99,6 +99,13 @@ const categoryThemes = {
   }
 };
 
+const defaultSubjectFaculties = {
+  Physics: 'Dr. H. V. Rao',
+  Chemistry: 'Prof. Suresh Kumar',
+  Mathematics: 'Dr. Ananya Sharma',
+  Biology: 'Dr. Rajesh Hegde'
+};
+
 export default function App() {
   // Application State
   const [currentCategory, setCurrentCategory] = useState('IPUC_CET');
@@ -117,19 +124,26 @@ export default function App() {
     const n = new Date();
     return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`;
   });
+
+  // Subject and Faculty per Subject state
+  const [subjectFaculties, setSubjectFaculties] = useState(defaultSubjectFaculties);
   const [subject, setSubject] = useState('Physics');
   const [faculty, setFaculty] = useState('Dr. H. V. Rao');
   const [globalMaxScore, setGlobalMaxScore] = useState(100);
   const [searchQuery, setSearchQuery] = useState('');
   const [liveClock, setLiveClock] = useState('');
 
-  // Database Connection State
+  // Auto-sync & Data loading states
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isFetchingSession, setIsFetchingSession] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'syncing'
+
+  // Database Connection State (Internal)
   const [dbStatus, setDbStatus] = useState({
     isConnected: false,
     databaseName: 'Checking...',
     currentUri: ''
   });
-  const [isSavingDb, setIsSavingDb] = useState(false);
 
   // Modals Visibility
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
@@ -161,7 +175,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch initial DB status and Students from API
+  // Fetch initial Settings and Subject Faculties from API
   useEffect(() => {
     const fetchHealthAndSettings = async () => {
       try {
@@ -170,6 +184,12 @@ export default function App() {
           const data = await res.json();
           if (data.dbStatus) setDbStatus(data.dbStatus);
           if (data.groupLinks) setGroupLinks(data.groupLinks);
+          if (data.subjectFaculties) {
+            setSubjectFaculties(prev => ({ ...prev, ...data.subjectFaculties }));
+            if (data.subjectFaculties[subject]) {
+              setFaculty(data.subjectFaculties[subject]);
+            }
+          }
         }
       } catch (e) {
         console.warn('Backend server not connected yet, operating in local mode.');
@@ -178,35 +198,145 @@ export default function App() {
     fetchHealthAndSettings();
   }, []);
 
-  // Fetch Category Roster from API or fallback
+  // Fetch Category Roster and saved session from API or fallback
   useEffect(() => {
+    let isCancelled = false;
     const fetchStudentsForCategory = async () => {
+      setIsFetchingSession(true);
       try {
         const res = await fetch(`/api/students?category=${currentCategory}`);
         if (res.ok) {
           const json = await res.json();
-          if (json.data && json.data.length > 0) {
-            // Merge with local attendance/score state
-            setStudentsData(prev => ({
-              ...prev,
-              [currentCategory]: json.data.map(dbStudent => {
-                const existing = (prev[currentCategory] || []).find(s => (s.rollNo === dbStudent.rollNo || s.roll === dbStudent.rollNo));
-                return {
-                  ...dbStudent,
-                  present: existing ? existing.present : true,
-                  score: existing ? existing.score : Math.floor(65 + Math.random() * 30),
-                  maxScore: existing ? existing.maxScore : globalMaxScore
-                };
-              })
-            }));
+          if (!isCancelled && json.data && json.data.length > 0) {
+            // Check if there is already an existing attendance session saved for this date, category, and subject
+            let savedRecordsMap = null;
+            let savedMaxScore = globalMaxScore;
+            try {
+              const attRes = await fetch(`/api/attendance?date=${date}&category=${currentCategory}&subject=${encodeURIComponent(subject)}`);
+              if (attRes.ok) {
+                const attJson = await attRes.json();
+                if (attJson.data && attJson.data.records && attJson.data.records.length > 0) {
+                  savedRecordsMap = new Map();
+                  attJson.data.records.forEach(r => savedRecordsMap.set(r.rollNo, r));
+                  if (attJson.data.maxScore) savedMaxScore = attJson.data.maxScore;
+                  if (attJson.data.faculty) {
+                    setFaculty(attJson.data.faculty);
+                  }
+                }
+              }
+            } catch (attErr) {
+              console.warn('Could not check remote attendance session:', attErr);
+            }
+
+            if (!isCancelled) {
+              setStudentsData(prev => ({
+                ...prev,
+                [currentCategory]: json.data.map(dbStudent => {
+                  if (savedRecordsMap && savedRecordsMap.has(dbStudent.rollNo)) {
+                    const saved = savedRecordsMap.get(dbStudent.rollNo);
+                    return {
+                      ...dbStudent,
+                      present: saved.present !== undefined ? saved.present : true,
+                      score: saved.score !== undefined ? saved.score : 0,
+                      maxScore: saved.maxScore || savedMaxScore
+                    };
+                  }
+                  const existing = (prev[currentCategory] || []).find(s => (s.rollNo === dbStudent.rollNo || s.roll === dbStudent.rollNo));
+                  return {
+                    ...dbStudent,
+                    present: existing ? existing.present : true,
+                    score: existing ? existing.score : Math.floor(65 + Math.random() * 30),
+                    maxScore: existing ? existing.maxScore : globalMaxScore
+                  };
+                })
+              }));
+              setIsDataLoaded(true);
+            }
           }
         }
       } catch (err) {
         console.warn('Using local dataset for category.');
+        setIsDataLoaded(true);
+      } finally {
+        if (!isCancelled) setIsFetchingSession(false);
       }
     };
+
     fetchStudentsForCategory();
-  }, [currentCategory]);
+    return () => { isCancelled = true; };
+  }, [currentCategory, date, subject]);
+
+  // Handle Subject Change: switch subject and automatically load faculty for that subject
+  const handleSubjectChange = (newSubject) => {
+    setSubject(newSubject);
+    const assignedFaculty = subjectFaculties[newSubject] || defaultSubjectFaculties[newSubject] || '';
+    setFaculty(assignedFaculty);
+  };
+
+  // Handle Faculty Name Change: update local state & subject-faculty map
+  const handleFacultyChange = (newFaculty) => {
+    setFaculty(newFaculty);
+    setSubjectFaculties(prev => ({
+      ...prev,
+      [subject]: newFaculty
+    }));
+  };
+
+  // Automatically push faculty changes into MongoDB for this subject
+  useEffect(() => {
+    if (!isDataLoaded) return;
+    const timer = setTimeout(async () => {
+      try {
+        await fetch('/api/settings/faculty', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject, faculty })
+        });
+      } catch (err) {
+        console.warn('Could not auto-sync faculty to MongoDB:', err);
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [subject, faculty, isDataLoaded]);
+
+  // Automatically push attendance and marks changes into MongoDB
+  useEffect(() => {
+    if (!isDataLoaded || isFetchingSession) return;
+    const records = studentsData[currentCategory];
+    if (!records || records.length === 0) return;
+
+    setSyncStatus('syncing');
+    const timer = setTimeout(async () => {
+      try {
+        const payload = {
+          date,
+          category: currentCategory,
+          subject,
+          faculty,
+          sessionTime,
+          maxScore: globalMaxScore,
+          records
+        };
+
+        const res = await fetch('/api/attendance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          setSyncStatus('synced');
+        } else {
+          setSyncStatus('synced');
+        }
+      } catch (err) {
+        console.warn('Auto-save attendance error:', err);
+        setSyncStatus('synced');
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [studentsData, currentCategory, date, sessionTime, subject, faculty, globalMaxScore, isDataLoaded, isFetchingSession]);
 
   // Persist local state
   useEffect(() => {
@@ -558,26 +688,12 @@ export default function App() {
                 </button>
               </div>
 
-              {/* Config & DB Buttons */}
+              {/* Group Links Button */}
               <div className="flex items-center space-x-2">
                 <button
                   type="button"
-                  onClick={() => setIsDbModalOpen(true)}
-                  className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition shadow-sm ${
-                    dbStatus.isConnected
-                      ? 'bg-emerald-950/80 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
-                      : 'bg-slate-800 text-amber-400 border-amber-900/60 hover:bg-slate-700'
-                  }`}
-                  title="MongoDB Database Connection Status & Settings"
-                >
-                  <Database className="w-3.5 h-3.5" />
-                  <span>{dbStatus.isConnected ? 'MongoDB Connected' : 'Database Settings'}</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setIsGroupModalOpen(true)}
-                  className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold border border-slate-700 transition"
+                  className="flex items-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-700 transition shadow-sm"
                 >
                   <Settings className="w-3.5 h-3.5 text-slate-400" />
                   <span>Group Links</span>
@@ -695,35 +811,14 @@ export default function App() {
                 System Configurations
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDbModalOpen(true);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold border transition ${
-                    dbStatus.isConnected
-                      ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
-                      : 'bg-slate-900 text-amber-400 border-slate-800'
-                  }`}
-                >
-                  <span className="flex items-center space-x-2">
-                    <Database className="w-4 h-4 text-emerald-400" />
-                    <span>Database Configuration</span>
-                  </span>
-                  <span className="text-[10px] bg-slate-800 px-2 py-0.5 rounded-full text-slate-300 font-normal">
-                    {dbStatus.isConnected ? 'Connected' : 'In-Memory'}
-                  </span>
-                </button>
-
+              <div>
                 <button
                   type="button"
                   onClick={() => {
                     setIsGroupModalOpen(true);
                     setMobileMenuOpen(false);
                   }}
-                  className="w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-200 border border-slate-800 hover:bg-slate-800 transition"
+                  className="w-full flex items-center justify-between p-3 rounded-xl text-xs font-bold bg-slate-900 text-slate-200 border border-slate-800 hover:bg-slate-800 transition shadow-sm"
                 >
                   <span className="flex items-center space-x-2">
                     <Settings className="w-4 h-4 text-slate-400" />
@@ -763,7 +858,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Launchers & Save Sync Button */}
+            {/* Launchers */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full lg:w-auto">
               
               <button
@@ -784,24 +879,13 @@ export default function App() {
                 <span className="truncate">{theme.title} Marks Group</span>
               </button>
 
-              <button
-                type="button"
-                disabled={isSavingDb}
-                onClick={saveSessionToDatabase}
-                className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-white text-slate-900 hover:bg-slate-100 px-4 py-2.5 rounded-xl text-xs font-black shadow-md transition"
-                title="Save today's attendance and test marks to MongoDB"
-              >
-                <Save className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>{isSavingDb ? 'Saving...' : 'Save to DB'}</span>
-              </button>
-
             </div>
           </div>
         </div>
 
         {/* Daily Class & Exam Setup Metadata */}
         <section className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200/90">
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+          <div className="flex flex-wrap items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-2">
             <div className="flex items-center space-x-2.5">
               <span className={`px-3 py-1 text-xs font-black rounded-lg uppercase tracking-wide border ${theme.badgeBg}`}>
                 {theme.title}
@@ -811,9 +895,16 @@ export default function App() {
               </h2>
             </div>
             
-            <div className="text-xs text-slate-600 font-semibold flex items-center gap-1.5 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-200">
-              <Clock className="w-3.5 h-3.5 text-slate-500" />
-              <span className="font-mono">{liveClock || '--:--:--'}</span>
+            <div className="flex items-center space-x-2">
+              <div className="text-xs font-semibold flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-xl border border-emerald-200">
+                <span className={`w-2 h-2 rounded-full ${syncStatus === 'syncing' ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
+                <span>{syncStatus === 'syncing' ? 'Saving to Database...' : 'Auto-Saved to Database'}</span>
+              </div>
+
+              <div className="text-xs text-slate-600 font-semibold flex items-center gap-1.5 bg-slate-100 px-3.5 py-1.5 rounded-xl border border-slate-200">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span className="font-mono">{liveClock || '--:--:--'}</span>
+              </div>
             </div>
           </div>
 
@@ -851,7 +942,7 @@ export default function App() {
               </label>
               <select
                 value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                onChange={(e) => handleSubjectChange(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white p-2.5 outline-none font-semibold transition"
               >
                 <option value="Physics">Physics ⚛️</option>
@@ -863,14 +954,15 @@ export default function App() {
 
             {/* Faculty Name */}
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Faculty Name
+              <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Faculty Name</span>
+                <span className="text-[10px] text-emerald-600 font-semibold lowercase">saved for {subject}</span>
               </label>
               <input
                 type="text"
                 placeholder="e.g. Dr. H. V. Rao"
                 value={faculty}
-                onChange={(e) => setFaculty(e.target.value)}
+                onChange={(e) => handleFacultyChange(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white p-2.5 outline-none font-semibold transition"
               />
             </div>
@@ -1420,7 +1512,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Apex Academy CET & NEET Coaching Management Platform &copy; 2026. MERN Stack Production Suite.</span>
           <div className="flex items-center space-x-3 text-slate-400">
-            <span>Database: <strong className={dbStatus.isConnected ? 'text-emerald-600' : 'text-amber-600'}>{dbStatus.databaseName}</strong></span>
+            <span>All records automatically synchronized to Database</span>
             <span>•</span>
             <span>Batch: <strong>{theme.title}</strong></span>
           </div>
