@@ -344,3 +344,4 @@ export function generateMonthlyExcel({ month, category, sessions, students }) {
   XLSX.utils.book_append_sheet(wb, ws, 'Monthly Register');
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
+

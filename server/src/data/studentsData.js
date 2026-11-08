@@ -250,3 +250,4 @@ export const defaultGroupLinks = {
   IIPUC_NEET_ABSENT: 'https://chat.whatsapp.com/',
   IIPUC_NEET_MARKS: 'https://chat.whatsapp.com/'
 };
+

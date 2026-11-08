@@ -30,6 +30,54 @@ export default function WhatsAppAutoSendModal({
 
   const timerRef = useRef(null);
 
+  // Stop auto runner helper
+  const stopAutoSend = () => {
+    setIsRunning(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimerCountdown(0);
+  };
+
+  // Format message text for a specific student
+  const formatMessage = (student) => {
+    const sc = student.score !== undefined ? Number(student.score) : 0;
+    const mx = student.maxScore || maxScore || 100;
+    const pct = mx > 0 ? ((sc / mx) * 100).toFixed(1) : 0;
+    const statusText = student.present ? 'PRESENT ✅' : 'ABSENT ❌';
+
+    return template
+      .replace(/{student_name}/g, student.name)
+      .replace(/{roll_no}/g, student.rollNo || student.roll)
+      .replace(/{batch}/g, categoryTitle)
+      .replace(/{subject}/g, subject)
+      .replace(/{date}/g, date)
+      .replace(/{faculty}/g, faculty || 'Faculty')
+      .replace(/{status}/g, statusText)
+      .replace(/{score}/g, String(sc))
+      .replace(/{max_score}/g, String(mx))
+      .replace(/{pct}/g, String(pct));
+  };
+
+  // Launch WhatsApp Web URL
+  const sendStudentMessage = (index) => {
+    const student = queue[index];
+    if (!student) return;
+
+    const rawPhone = String(student.phone).replace(/[^0-9]/g, '');
+    const phone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+    const message = encodeURIComponent(formatMessage(student));
+    const url = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
+
+    // Open WhatsApp Web in tab
+    window.open(url, '_blank');
+
+    // Update sent status
+    setQueue(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], sent: true };
+      return copy;
+    });
+  };
+
   // Initialize Queue when modal opens or filter changes
   useEffect(() => {
     if (!isOpen) {
@@ -102,47 +150,6 @@ export default function WhatsAppAutoSendModal({
 
   if (!isOpen) return null;
 
-  // Format message text for a specific student
-  const formatMessage = (student) => {
-    const sc = student.score !== undefined ? Number(student.score) : 0;
-    const mx = student.maxScore || maxScore || 100;
-    const pct = mx > 0 ? ((sc / mx) * 100).toFixed(1) : 0;
-    const statusText = student.present ? 'PRESENT ✅' : 'ABSENT ❌';
-
-    return template
-      .replace(/{student_name}/g, student.name)
-      .replace(/{roll_no}/g, student.rollNo || student.roll)
-      .replace(/{batch}/g, categoryTitle)
-      .replace(/{subject}/g, subject)
-      .replace(/{date}/g, date)
-      .replace(/{faculty}/g, faculty || 'Faculty')
-      .replace(/{status}/g, statusText)
-      .replace(/{score}/g, String(sc))
-      .replace(/{max_score}/g, String(mx))
-      .replace(/{pct}/g, String(pct));
-  };
-
-  // Launch WhatsApp Web URL
-  const sendStudentMessage = (index) => {
-    const student = queue[index];
-    if (!student) return;
-
-    const rawPhone = String(student.phone).replace(/[^0-9]/g, '');
-    const phone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
-    const message = encodeURIComponent(formatMessage(student));
-    const url = `https://web.whatsapp.com/send?phone=${phone}&text=${message}`;
-
-    // Open WhatsApp Web in tab
-    window.open(url, '_blank');
-
-    // Update sent status
-    setQueue(prev => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], sent: true };
-      return copy;
-    });
-  };
-
   // Send single on demand
   const handleSendSingle = (index) => {
     sendStudentMessage(index);
@@ -165,12 +172,6 @@ export default function WhatsAppAutoSendModal({
     }
     setIsRunning(true);
     showToast(`Started Auto WhatsApp Web dispatch (${delaySeconds}s intervals)...`);
-  };
-
-  const stopAutoSend = () => {
-    setIsRunning(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-    setTimerCountdown(0);
   };
 
   const resetQueue = () => {
@@ -458,3 +459,4 @@ export default function WhatsAppAutoSendModal({
     </div>
   );
 }
+

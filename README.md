@@ -151,3 +151,4 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 | `GET` | `/api/export/excel/monthly?...` | Download Monthly Master Register `.xlsx` |
 | `POST` | `/api/settings/db-connect` | Dynamically update MongoDB URI & auto-seed |
 | `GET` / `PUT` | `/api/settings/group-links` | Retrieve or save WhatsApp group invite links |
+

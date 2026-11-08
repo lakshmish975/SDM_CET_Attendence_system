@@ -87,3 +87,4 @@ attendanceSchema.index({ date: 1, category: 1, subject: 1 }, { unique: true });
 
 const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', attendanceSchema);
 export default Attendance;
+

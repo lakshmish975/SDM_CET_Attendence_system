@@ -51,3 +51,4 @@ studentSchema.index({ rollNo: 1, category: 1 }, { unique: true });
 
 const Student = mongoose.models.Student || mongoose.model('Student', studentSchema);
 export default Student;
+
