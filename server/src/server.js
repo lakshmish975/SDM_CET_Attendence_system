@@ -74,7 +74,7 @@ app.get('*', (req, res, next) => {
 });
 
 // Start Server & Attempt DB Connection
-app.listen(PORT, async () => {
+app.listen(PORT, '0.0.0.0', async () => {
   console.log(`====================================================`);
   console.log(`🚀 Apex Academy CET & NEET Server running on port ${PORT}`);
   console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
