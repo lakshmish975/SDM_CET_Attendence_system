@@ -103,6 +103,30 @@ router.post('/', async (req, res) => {
   }
 });
 
+// GET single student by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (isMongoConnected() && mongoose.Types.ObjectId.isValid(id)) {
+      const student = await Student.findById(id);
+      if (!student) {
+        return res.status(404).json({ success: false, error: 'Student not found.' });
+      }
+      return res.json({ success: true, data: student });
+    } else {
+      const student = inMemoryStore.students.find(s => s._id === id || s.rollNo === id);
+      if (!student) {
+        return res.status(404).json({ success: false, error: 'Student not found in memory store.' });
+      }
+      return res.json({ success: true, data: student });
+    }
+  } catch (err) {
+    console.error('Error fetching student:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // PUT update existing student
 router.put('/:id', async (req, res) => {
   try {

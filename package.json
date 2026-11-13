@@ -13,7 +13,8 @@
     "install:all": "npm install --prefix server && npm install --prefix client",
     "server": "npm run dev --prefix server",
     "client": "npm run dev --prefix client",
-    "seed": "npm run seed --prefix server"
+    "seed": "npm run seed --prefix server",
+    "test": "npm test --prefix server"
   },
   "engines": {
     "node": ">=18.0.0"

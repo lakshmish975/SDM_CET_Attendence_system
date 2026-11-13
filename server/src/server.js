@@ -73,19 +73,25 @@ app.get('*', (req, res, next) => {
   });
 });
 
-// Start Server & Attempt DB Connection
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`====================================================`);
-  console.log(`🚀 Apex Academy CET & NEET Server running on port ${PORT}`);
-  console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
-  console.log(`====================================================`);
+// Start Server & Attempt DB Connection (only in non-test environment)
+let server = null;
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, '0.0.0.0', async () => {
+    console.log(`====================================================`);
+    console.log(`🚀 Apex Academy CET & NEET Server running on port ${PORT}`);
+    console.log(`📡 Health Check: http://localhost:${PORT}/api/health`);
+    console.log(`====================================================`);
 
-  // Attempt DB Connection if MONGODB_URI is provided
-  if (process.env.MONGODB_URI) {
-    await connectDB(process.env.MONGODB_URI);
-  } else {
-    console.log(`ℹ️ [Notice] No MONGODB_URI found in .env.`);
-    console.log(`   Running with all 165 students in memory.`);
-    console.log(`   You can paste your MongoDB URI in .env or via the web UI settings!`);
-  }
-});
+    // Attempt DB Connection if MONGODB_URI is provided
+    if (process.env.MONGODB_URI) {
+      await connectDB(process.env.MONGODB_URI);
+    } else {
+      console.log(`ℹ️ [Notice] No MONGODB_URI found in .env.`);
+      console.log(`   Running with all 165 students in memory.`);
+      console.log(`   You can paste your MongoDB URI in .env or via the web UI settings!`);
+    }
+  });
+}
+
+export { app, server };
+export default app;
